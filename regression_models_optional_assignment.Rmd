@@ -1,0 +1,108 @@
+---
+title: "Does college major contribute to difference in the income?"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+The libarary containing the dataset is loaded in R environment and the dataset is imported in the memory.  
+```{r}
+library(dplyr)
+library(ggplot2)
+library(collegeIncome)
+data(college)
+```
+
+
+## Dataset codebook
+* rank: Rank by median earnings
+* major_code: Major code
+* major: Major description
+* major_category: Category of major
+* total: Total number of people with major
+* sample_size: Sample size of full-time, year-round individuals used for income/earnings estimates: p25th, median, p75th
+* p25th: 25th percentile of earnings
+* median: Median earnings of full-time, year-round workers
+* p75th: 75th percentile of earnings
+* perc_men: % men with major (out of total)
+perc_women: % women with major (out of total)
+* perc_employed: % employed (out of total)
+* perc_employed_fulltime: % employed 35 hours or more (out of employed)
+* perc_employed_parttime: % employed less than 35 hours (out of employed)
+* perc_employed_fulltime_yearround: % employed at least 50 weeks and at least 35 hours (out of employed and full-time)
+* perc_unemployed: % unemployed (out of employed)
+* perc_college_jobs: % with job requiring a college degree (out of employed)
+* perc_non_college_jobs: % with job not requiring a college degree (out of employed)
+* perc_low_wage_jobs: % in low-wage service jobs (out of total)
+
+## Quick overview of the dataset
+The dataset is quickly reviewed using the *head* an *str* function.   
+```{r}
+head(college)
+str(college)
+```
+
+A basic analysis of the average income for each category is performed.
+```{r}
+college_tmp <- college %>% select(major_category, median, p25th, p75th)
+college2 <- college_tmp %>% group_by(major_category) %>% summarize(median_mean = mean(median, na.rm = TRUE), p25th_mean = mean(p25th, na.rm = TRUE), p75th_mean = mean(p75th, na.rm = TRUE))
+college2 <- college2 %>% arrange(desc(median_mean))
+college2
+```
+The 3 higher median incomes is associated with a major in 1. Business, 2. Biology & Life Sciences and 3. Agriculture & Natural Resources. The 3 lower incomes are Humanities & Liberal Arts, Computers & Mathematics and Interdisciplinary.   
+
+
+In order to check the distribution for each major category and the p25th, median and p75th income, a boxplot is generated. The distribution of each quantiles per major category do not show any trend, suggesting that the income is independent of the major. 
+```{r}
+major_cat <- rep(college_tmp$major_category, times = 3)
+income_cat <- rep(c("median", "p25th", "p74th"), each = length(college_tmp$major_category))
+income <- c(college_tmp$median, college_tmp$p25th, college_tmp$p75th)
+college_tmp2 <- data.frame(cbind(major_cat, income_cat, income))
+college_tmp2[,3] <- as.numeric(college_tmp2[,3])
+g <- ggplot(college_tmp2, aes(income, major_cat))
+g + geom_boxplot() + facet_grid(income_cat~.)
+```
+
+
+## Regression model
+A regression models is generateed from the dataset where the median as the outcome and the major category as the factor. 
+
+```{r}
+fit <- lm(median ~ major_category - 1, college_tmp)
+round(summary(fit)$coef, 3)
+```
+
+
+As expected, the estimated values are the mean of the median income for each major category. Since all the different variables are compared to 0, the p-value is then statistically significant for each category. The plot of the residuals doesn't show any pattern and looks normally distributed. Note: In the plot, there is a clear outlier.  
+
+Let's compare now the median income from the major category business compared to the rest. 
+
+```{r}
+major_cat2 <- relevel(as.factor(college_tmp$major_category), "Business" )
+fit2 <- lm(median ~ major_cat2, college_tmp)
+summary(fit2)
+par(mfrow = c(2,2))
+plot(fit2)
+```
+
+
+By comparing the major category **Business** to the other categories, we can observe a clear difference with some major categories. There is a significant difference (p-value < 0.05) when compared to **Arts**, **Computers and Mathematics**, **Education**, **Engineering**, **Humanities & Liberal Arts** and **Social Science**.  
+
+
+
+## Conclusion
+In order to answer the question below, a basic analysis was performed.   
+
+**Question:** Based on your analysis, would you conclude that there is a significant association between college major category and income?  
+
+
+The assumptions could have been stated as the following:
+* NULL hypothesis: there is no difference in the mean of the incomes when holding a specific major.
+* Alternative hypothesis: There is a difference in the mean of the incomes between major categories.
+
+
+Our basic analysis shows that there is a difference between some major and some other majors. There is a significant difference (p-value < 0.05) btween **Business** compared to **Arts**, **Computers and Mathematics**, **Education**, **Engineering**, **Humanities & Liberal Arts** and **Social Science**. 
+
