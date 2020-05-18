@@ -71,13 +71,21 @@ g + geom_boxplot() + facet_grid(income_cat~.)
 A regression models is generateed from the dataset where the median as the outcome and the major category as the factor. 
 
 ```{r}
-fit <- lm(median ~ major_category - 1, college_tmp)
+fit <- lm(median ~ major_category, college_tmp)
 round(summary(fit)$coef, 3)
+plot(fit)
 ```
 
 
-As expected, the estimated values are the mean of the median income for each major category. Since all the different variables are compared to 0, the p-value is then statistically significant for each category. The plot of the residuals doesn't show any pattern and looks normally distributed. Note: In the plot, there is a clear outlier.  
+The intercept is the major category Agriculture & Natural Resources. All the different variables are compared to the intercept, the p-value is not statistically significant compared to each category. The plot of the residuals doesn't show any pattern and looks normally distributed. Let's use a multiple regression model to confirm this observation.  
+```{r}
+anova(fit)
+```
 
+
+When comparing all the college majors against each other, the anova fail to find any significant difference in the mean income.
+
+## Special case
 Let's compare now the median income from the major category business compared to the rest. 
 
 ```{r}
@@ -104,5 +112,5 @@ The assumptions could have been stated as the following:
 * Alternative hypothesis: There is a difference in the mean of the incomes between major categories.
 
 
-Our basic analysis shows that there is a difference between some major and some other majors. There is a significant difference (p-value < 0.05) btween **Business** compared to **Arts**, **Computers and Mathematics**, **Education**, **Engineering**, **Humanities & Liberal Arts** and **Social Science**. 
+Our basic analysis shows that there is no difference in the income when holding a specific major. However, when orienting the analysis to the higher income a difference between some majors can be observed. There is a significant difference (p-value < 0.05) btween **Business** compared to **Arts**, **Computers and Mathematics**, **Education**, **Engineering**, **Humanities & Liberal Arts** and **Social Science**. These results need to be adjusted in order to confirm such trend. 
 
